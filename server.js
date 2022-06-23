@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const noteData = require("./db/db.json");
+const fs = require("fs");
 
 const app = express();
 const PORT = 3001;
@@ -22,7 +23,7 @@ app.get("/api/notes", (req, res) => res.json(noteData));
 
 app.post("/api/notes", (req, res) => {
   console.info(`${req.method} request received to add a note.`);
-  const {title, text} = req.body
+  const { title, text } = req.body;
 
   if (title && text) {
     const newNote = {
@@ -30,6 +31,24 @@ app.post("/api/notes", (req, res) => {
       text,
     };
 
+    fs.readFile("./db/db.json", "utf8", (err, data) => {
+      if (err) {
+        console.error(err);
+      } else {
+        const parsedNotes = JSON.parse(data);
+
+        parsedNotes.push(newNote);
+
+        fs.writeFile(
+          "./db/db.json",
+          JSON.stringify(parsedNotes, null, 4),
+          (writeErr) =>
+            writeErr
+              ? console.error(writeErr)
+              : console.info("Successfully added note!")
+        );
+      }
+    });
     const response = {
       status: "success",
       body: newNote,
@@ -37,7 +56,6 @@ app.post("/api/notes", (req, res) => {
 
     console.log(response);
     res.status(201).json(response);
-
   } else {
     res.status(500).json("Request body must contain a title and a body.");
   }
